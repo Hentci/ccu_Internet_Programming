@@ -29,8 +29,8 @@ char select_img[] =	"<form action=\"\" method=\"post\" enctype=\"multipart/form-
 					"</form>\r\n";
 char text[] =		"<img src=\"/img1.jpeg\" alt=\"No img\">\r\n";
 char HTML2[] =		"</body></html>\r\n";
-char buff[pic_MAXLEN + 5];
-char picture[pic_MAXLEN + 5];
+u_char *buff;
+u_char *picture;
 void strcat_pack_selc(char *pack) {
 	pack[0] = '\0';
 	strcat(pack, TCP_head);
@@ -47,17 +47,17 @@ void strcat_pack_selc(char *pack) {
 // 	strcat(pack, text);
 // 	strcat(pack, HTML2);
 // }
-char *get_picture(char *package_head) {
-	char *c = package_head;
+u_char *get_picture(u_char *package_head) {
+	u_char *c = package_head;
 	c = strstr(c, "\r\n\r\n");
 	c = c + 5;
 	c = strstr(c, "\r\n\r\n");
 	c = c + 4;
 	return c;
 }
-int get_len(char *pack) {
-	char *line = strstr(pack, "Content-Length: ");
-	char n[10];
+int get_len(u_char *pack) {
+	u_char *line = strstr(pack, "Content-Length: ");
+	u_char n[10];
 	int idx = 0;
 	while(*(++line) != '\n') {
 		if(isdigit(*line)) n[idx++] = *line;
@@ -65,12 +65,12 @@ int get_len(char *pack) {
 	n[idx] = 0;
 	return atoi(n);
 }
-void picture_pack(char *pack) {
+void picture_pack(u_char *pack) {
 	pack[0] = '\0';
 	strcat(pack, TCP_head_send_jpg);
-	strcat(pack, (char *)picture);
+	strcat(pack, (u_char *)picture);
 }
-void show_pack_msg(char *pack) {
+void show_pack_msg(u_char *pack) {
 	if(strncmp(buff, "GET ", 4) == 0 && strstr(buff, "GET /img1.jpeg")) printf("Browser request Image\n");
 	else if(strncmp(buff, "GET ", 4) == 0 && strstr(buff, "Accept: text/html")) printf("Browser request Index\n");
 	else if(strncmp(buff, "POST ", 5) == 0 && strstr(buff, "multipart/form-data")) printf("Browser send a file\n");
@@ -81,8 +81,11 @@ int listenfd;
 int connfd;
 
 int main(int argc, char **argv) {
+	buff = (u_char*) malloc((long long)1e10 * sizeof(u_char));
+	picture = (u_char*) malloc((long long)1e10 * sizeof(u_char));
 	struct sockaddr_in servaddr;
-	char pack[MAXLINE];
+	u_char *pack;
+	pack = (u_char*) malloc((long long)1e7 * sizeof(u_char));
 
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(listenfd == -1) {
