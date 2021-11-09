@@ -131,7 +131,7 @@ int main(int argc,char **argv){
 		printf("Listen error\n");
 		exit(1);
 	}
-    printf("Listening\n");
+    printf("Listening...\n");
 
     // to prevent zombie process
     signal(SIGCHLD, SIG_IGN);
