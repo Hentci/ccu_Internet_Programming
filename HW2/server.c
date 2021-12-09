@@ -47,6 +47,7 @@ int main() {
 
     user_passwords[0] = "0";
     user_passwords[1] = "1";
+    user_passwords[2] = "2";
 
     int connfd;
     struct sockaddr_in servaddr;
