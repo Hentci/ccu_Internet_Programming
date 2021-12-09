@@ -332,8 +332,20 @@ void printBoard(char board[][3]) {
 }
 
 void check(char board[][3]) {
-    int i;
+    int i,cnt = 0,draw = 0;
     char win = ' ';
+
+    for(int i= 0;i< 3;i++){
+        for(int j= 0;j< 3;j++){
+            if(board[i][j] != ' ')
+                cnt++;
+        }
+    }
+
+    if (cnt == 9){
+        printf("DRAW!\n");
+        draw = 1;
+    }
 
     // rows
     for (i = 0; i < 3; i++)
@@ -363,7 +375,7 @@ void check(char board[][3]) {
         printf("Player 2 Wins\n	");
     }
 
-    if (win == 'X' || win == 'O') {
+    if (win == 'X' || win == 'O' || draw == 1) {
         send_server("8\n");
         sock_rd_status = 4;
     }
