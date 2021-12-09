@@ -19,8 +19,8 @@
 #endif // MACRO
 
 char TCP_head[] =   "HTTP/1.1 200 OK\r\n";
-char TCP_head_send_jpeg[] =  "HTTP/1.1 200 OK\r\n"
-					"Content-Type: image/jpeg\r\n";
+char TCP_head_send_txt[] =  "HTTP/1.1 200 OK\r\n"
+					"Content-Type: image/txt\r\n";
 
 char HTML1[] =		"\r\n"
 					"<!DOCTYPE html>\r\n"
@@ -32,7 +32,7 @@ char select_img[] =	"<form action=\"\" method=\"post\" enctype=\"multipart/form-
 					"<input type=\"file\" name=\"img\">\r\n"
 					"<button type=\"submit\">Submit</button>\r\n"
 					"</form>\r\n";
-char text[] =		"<img src=\"/img.jpeg\" alt=\"No img\">\r\n";
+char text[] =		"<img src=\"/img.txt\" alt=\"No img\">\r\n";
 char HTML2[] =		"</body></html>\r\n";
 
 int listenfd;
@@ -72,12 +72,12 @@ int get_content_LEN (u_char *packet){
 
 void strcat_picture_packet(u_char *packet){
     packet[0] = '\0';
-	strcat(packet, TCP_head_send_jpeg);
+	strcat(packet, TCP_head_send_txt);
 	strcat(packet, (u_char *)picture);
 }
 
 int print_and_check_packet_msg(u_char *packet){
-    if(strncmp(buffer, "GET ", 4) == 0 && strstr(buffer, "GET /img.jpeg")) {
+    if(strncmp(buffer, "GET ", 4) == 0 && strstr(buffer, "GET /img.txt")) {
         printf("Browser request Image\n");
         return 1;
     }
@@ -169,7 +169,7 @@ int main(int argc,char **argv){
 
             if(packet_kind == 1) {
                 // read image in binary
-                FILE *image = fopen("img.jpeg", "rb");
+                FILE *image = fopen("img.txt", "rb");
                 // check file open
                 if(image == NULL) {
                     printf("fopen error\n");
@@ -181,7 +181,7 @@ int main(int argc,char **argv){
                 struct stat statbuffer;
                 fstat(imagefd, &statbuffer);
 
-                strcat(packet, TCP_head_send_jpeg);
+                strcat(packet, TCP_head_send_txt);
                 sprintf(buffer, "Content-Length: %d\r\n", (int)statbuffer.st_size);
                 strcat(packet, buffer); 
                 strcat(packet,"\r\n");
@@ -207,7 +207,7 @@ int main(int argc,char **argv){
             else if(packet_kind == 3){
                 u_char *start_ptr = get_picture_start_ptr(buffer);
                 int LEN = get_content_LEN(buffer); // LEN == image size
-                FILE *fp = fopen("img.jpeg", "w");
+                FILE *fp = fopen("img.txt", "w");
                 // check file write
                 if(fp == NULL){
                     printf("fopen error\n");
