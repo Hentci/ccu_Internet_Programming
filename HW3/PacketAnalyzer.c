@@ -74,6 +74,10 @@ void TCP_or_UDP(ip *ip_header, u_char *packet){
     }
 }
 
+// void TCP_or_UDP_for_IPv6(ip6_hdr *ip_header, u_char *packet){
+    
+// }
+
 int main(int argc, char **argv){
     if(argc < 2){
         printf("./PacketAnalyzer.out <filename>\n");
@@ -185,7 +189,7 @@ int main(int argc, char **argv){
             printf("│ IP Destination address │ %15s               \n", ip_des);       
             printf("└────────────────────────┴─────────────────────────────────────────────┘\n"); 
 
-            // TCP_or_UDP(ip6_header, packet); 
+            // TCP_or_UDP_for_IPv6(ip6_header, packet); 
 
         /* Others */
         } else if(type == ETHERTYPE_ARP) {
