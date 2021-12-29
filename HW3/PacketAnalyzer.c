@@ -180,9 +180,9 @@ int main(int argc, char **argv){
 
             printf("\n<IP>\n");
             printf("┌────────────────────────┬─────────────────────────────────────────────┐\n");
-            printf("│ IP Sourse address      │ %15s               │\n", ip_src);       
+            printf("│ IP Sourse address      │ %15s               \n", ip_src);       
             printf("├────────────────────────┼─────────────────────────────────────────────┤\n");
-            printf("│ IP Destination address │ %15s               │\n", ip_des);       
+            printf("│ IP Destination address │ %15s               \n", ip_des);       
             printf("└────────────────────────┴─────────────────────────────────────────────┘\n"); 
 
             // TCP_or_UDP(ip6_header, packet); 
