@@ -2,6 +2,11 @@
     "files.associations": {
         "*.rmd": "markdown",
         "stdlib.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "ip6.h": "c",
+        "tcp.h": "c",
+        "ethernet.h": "c",
+        "in.h": "c",
+        "inttypes.h": "c"
     }
 }

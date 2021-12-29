@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <net/ethernet.h>
@@ -21,6 +22,7 @@ typedef struct ether_header ether_header;
 typedef struct tcphdr tcphdr;
 typedef struct udphdr udphdr;
 typedef struct ip ip;
+typedef struct ip6_hdr ip6_hdr;
 #endif
 
 // Media Access Control Address
@@ -144,10 +146,10 @@ int main(int argc, char **argv){
         printf("└─────────────────────────┴───────────────────┘\n");
 
         unsigned short type = ntohs(eth_header->ether_type); // net to host short int
-        ip *ip_header = (ip *)(packet + ETHER_HDR_LEN);
-        
+        /* IPv4 */
         printf("\n<Ethernet type>\n");
         if(type == ETHERTYPE_IP) {
+            ip *ip_header = (ip *)(packet + ETHER_HDR_LEN);
             char ip_src[INET_ADDRSTRLEN];
             char ip_des[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, &(ip_header->ip_src), ip_src, INET_ADDRSTRLEN);
@@ -165,23 +167,27 @@ int main(int argc, char **argv){
             printf("└────────────────────────┴─────────────────┘\n");
 
             TCP_or_UDP(ip_header, packet);
-
+        /* IPv6 */
         } else if(type == ETHERTYPE_IPV6) {
+            ip6_hdr *ip6_header = (ip6_hdr *)(packet + ETHER_HDR_LEN);
             printf("┌──────────────────┬────────┐\n");
             printf("│ Ethernet type    │   IPv6 │\n");       
             printf("└──────────────────┴────────┘\n"); 
-            char ip_src[INET_ADDRSTRLEN];
-            char ip_des[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &(ip_header->ip_src), ip_src, INET_ADDRSTRLEN);
-            inet_ntop(AF_INET, &(ip_header->ip_dst), ip_des, INET_ADDRSTRLEN);
+            char ip_src[INET6_ADDRSTRLEN];
+            char ip_des[INET6_ADDRSTRLEN];
+            inet_ntop(AF_INET6, &(ip6_header->ip6_src), ip_src, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, &(ip6_header->ip6_dst), ip_des, INET6_ADDRSTRLEN);
 
             printf("\n<IP>\n");
-            printf("┌────────────────────────┬─────────────────┐\n");
-            printf("│ IP Sourse address      │ %15s │\n", ip_src);       
-            printf("├────────────────────────┼─────────────────┤\n");
-            printf("│ IP Destination address │ %15s │\n", ip_des);       
-            printf("└────────────────────────┴─────────────────┘\n"); 
-            TCP_or_UDP(ip_header, packet);
+            printf("┌────────────────────────┬─────────────────────────────────────────────┐\n");
+            printf("│ IP Sourse address      │ %15s               │\n", ip_src);       
+            printf("├────────────────────────┼─────────────────────────────────────────────┤\n");
+            printf("│ IP Destination address │ %15s               │\n", ip_des);       
+            printf("└────────────────────────┴─────────────────────────────────────────────┘\n"); 
+
+            // TCP_or_UDP(ip6_header, packet); 
+
+        /* Others */
         } else if(type == ETHERTYPE_ARP) {
             printf("┌──────────────────┬────────┐\n");
             printf("│ Ethernet type    │    ARP │\n");       
@@ -189,6 +195,18 @@ int main(int argc, char **argv){
         } else if(type == ETHERTYPE_PUP) {
             printf("┌──────────────────┬────────┐\n");
             printf("│ Ethernet type    │    PUP │\n");       
+            printf("└──────────────────┴────────┘\n");  
+        } else if(type == ETHERTYPE_IPX) {
+            printf("┌──────────────────┬────────┐\n");
+            printf("│ Ethernet type    │    IPX │\n");       
+            printf("└──────────────────┴────────┘\n");  
+        } else if(type == ETHERTYPE_VLAN) {
+            printf("┌──────────────────┬────────┐\n");
+            printf("│ Ethernet type    │   VLAN │\n");       
+            printf("└──────────────────┴────────┘\n");  
+        } else if(type == ETHERTYPE_SPRITE) {
+            printf("┌──────────────────┬────────┐\n");
+            printf("│ Ethernet type    │ SPRITE │\n");       
             printf("└──────────────────┴────────┘\n");  
         } else {
             printf("┌──────────────────┬────────────┐\n");
