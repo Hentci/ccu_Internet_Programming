@@ -27,26 +27,49 @@ typedef struct ip ip;
 #define MaxMACLEN 20
 
 void separateLine(char *str) {
-    int lineLen = 200;
-    int len = strlen(str);
-    int left = (lineLen - len) / 2;
-    int right = lineLen - len - left;
-    for(int i = 0;i < left;i++) printf("=");
-    printf(" %s ", str);
-    for(int i = 0;i < right;i++) printf("=");
-    
+    int lineLen = 180, Len = strlen(str), leftBound = (lineLen - Len) / 2, rightBound = lineLen - Len - leftBound;
+    for(int i = 0;i < leftBound;i++) printf("=");
+    printf(" [%s] ", str);
+    for(int i = 0;i < rightBound;i++) printf("=");
     printf("\n");
 }
 
-char *MACntoa(u_char *num) {
-    char *mac = malloc(sizeof(char) * MaxMACLEN);
+char *MAC_ntoa(u_char *num) {
+    char *MAC = malloc(sizeof(char) * MaxMACLEN);
     for(int i = 0;i < 6;i++) {
         char *tmp = malloc(sizeof(char) * 2);
         sprintf(tmp, "%02x", num[i]); // %02x => to hex and if number is not > 10, print zero before it
-        if(i) strcat(mac, ":");
-        strcat(mac, tmp);
+        if(i) strcat(MAC, ":");
+        strcat(MAC, tmp);
+        free(tmp);
     }
-    return mac;
+    return MAC;
+}
+
+void TCP_or_UDP(ip *ip_header, u_char *packet){
+    tcphdr *tcp_header;
+    udphdr *udp_header;
+    if(ip_header->ip_p == IPPROTO_UDP) {
+        udp_header = (udphdr *)(packet + ETHER_HDR_LEN + ip_header->ip_hl * 4);
+        printf("\n<PORT>\n");
+        printf("┌──────────────────┬────────┐\n");
+        printf("│ Protocol         │    UDP │\n"); 
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Sourse Port      │ %6d │\n", ntohs(udp_header->uh_sport));       
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Destination Port │ %6d │\n", ntohs(udp_header->uh_dport));       
+        printf("└──────────────────┴────────┘\n");
+    } else if(ip_header->ip_p == IPPROTO_TCP) {
+        tcp_header = (tcphdr *)(packet + ETHER_HDR_LEN + ip_header->ip_hl * 4);
+        printf("\n<PORT>\n");
+        printf("┌──────────────────┬────────┐\n");
+        printf("│ Protocol         │    TCP │\n");       
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Sourse Port      │ %6d │\n", ntohs(tcp_header->th_sport));       
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Destination Port │ %6d │\n", ntohs(tcp_header->th_dport));       
+        printf("└──────────────────┴────────┘\n");
+    }
 }
 
 int main(int argc, char **argv){
@@ -66,21 +89,18 @@ int main(int argc, char **argv){
         exit(1);
     }
 
-    int packet_cnt = 0;
+    int packetID = 0;
     while(true) {
-        pcap_pkthdr *packet_header; // timestamp, portion len, sum of len
+        pcap_pkthdr *packet_header; 
         ether_header *eth_header;
-        tcphdr *tcp_header;
-        udphdr *udp_header;
         time_t time_t_tmp;
-
         u_char *packet;
-        int res = pcap_next_ex(handler, &packet_header, (const u_char **)&packet);
+        int res = pcap_next_ex(handler, &packet_header, (const u_char **)&packet); // capture one packet one time
         if(res == 0) 
             continue;
         else if(res == -2) {
             char line[100];
-            sprintf(line, "The end of %s", filename);
+            sprintf(line, "It is the last packet of %s", filename);
             separateLine(line);
             break;
         }
@@ -89,26 +109,26 @@ int main(int argc, char **argv){
             exit(1);
         }
 
-        time_t_tmp = packet_header->ts.tv_sec;
+        time_t_tmp = packet_header->ts.tv_sec; // ts => time stamp , tv_sec => in second
         struct tm ts = *localtime(&time_t_tmp);
-        char str_time[50];
-        strftime(str_time, sizeof(str_time),"%a %Y-%m-%d %H:%M:%S", &ts);
+        char timeStamp[50];
+        strftime(timeStamp, sizeof(timeStamp),"%a %Y-%m-%d %H:%M:%S", &ts); // store the localtime into str_time
 
         eth_header = (ether_header *)packet;
         
-        char mac_src[MaxMACLEN], mac_des[MaxMACLEN];
-        strcpy(mac_src, MACntoa(eth_header->ether_shost));
-        strcpy(mac_des, MACntoa(eth_header->ether_dhost));
+        char MAC_src[MaxMACLEN], MAC_des[MaxMACLEN];
+        strcpy(MAC_src, MAC_ntoa(eth_header->ether_shost)); /* source ether addr	*/
+        strcpy(MAC_des, MAC_ntoa(eth_header->ether_dhost)); /* destination eth addr	*/
 
         char line[100];
-        sprintf(line, "Packet count: %d", ++packet_cnt);
+        sprintf(line, "PacketID: %d", ++packetID);
         separateLine(line);
 
-        printf("\n<Info>\n");
+        printf("\n<Information>\n");
         printf("┌───────────────────┬─────────────────────────┐\n");
-        printf("│ Packet number     │                    %4d │\n", packet_cnt);       
+        printf("│ PacketID          │                    %4d │\n", packetID);       
         printf("├───────────────────┼─────────────────────────┤\n");
-        printf("│ Time              │ %s │\n", str_time);       
+        printf("│ Time Stamp        │ %s │\n", timeStamp);       
         printf("├───────────────────┼─────────────────────────┤\n");
         printf("│ Length            │                   %5d │\n", packet_header->len);       
         printf("├───────────────────┼─────────────────────────┤\n");
@@ -118,12 +138,12 @@ int main(int argc, char **argv){
 
         printf("\n<MAC>\n");
         printf("┌─────────────────────────┬───────────────────┐\n");
-        printf("│ MAC Sourse address      │ %15s │\n", mac_src);       
+        printf("│ MAC Sourse address      │ %15s │\n", MAC_src);       
         printf("├─────────────────────────┼───────────────────┤\n");
-        printf("│ MAC Destination address │ %15s │\n", mac_des);       
+        printf("│ MAC Destination address │ %15s │\n", MAC_des);       
         printf("└─────────────────────────┴───────────────────┘\n");
 
-        unsigned short type = ntohs(eth_header->ether_type);
+        unsigned short type = ntohs(eth_header->ether_type); // net to host short int
         ip *ip_header = (ip *)(packet + ETHER_HDR_LEN);
         
         printf("\n<Ethernet type>\n");
@@ -134,7 +154,7 @@ int main(int argc, char **argv){
             inet_ntop(AF_INET, &(ip_header->ip_dst), ip_des, INET_ADDRSTRLEN);
 
             printf("┌──────────────────┬────────┐\n");
-            printf("│ Ethernet type    │     IP │\n");       
+            printf("│ Ethernet type    │   IPv4 │\n");       
             printf("└──────────────────┴────────┘\n");
 
             printf("\n<IP>\n");
@@ -144,28 +164,24 @@ int main(int argc, char **argv){
             printf("│ IP Destination address │ %15s │\n", ip_des);       
             printf("└────────────────────────┴─────────────────┘\n");
 
-            if(ip_header->ip_p == IPPROTO_UDP) {
-                udp_header = (udphdr *)(packet + ETHER_HDR_LEN + ip_header->ip_hl * 4);
-                printf("\n<PORT>\n");
-                printf("┌──────────────────┬────────┐\n");
-                printf("│ Protocol         │    UDP │\n"); 
-                printf("├──────────────────┼────────┤\n");
-                printf("│ Sourse Port      │ %6d │\n", ntohs(udp_header->uh_sport));       
-                printf("├──────────────────┼────────┤\n");
-                printf("│ Destination Port │ %6d │\n", ntohs(udp_header->uh_dport));       
-                printf("└──────────────────┴────────┘\n");
-            } else if(ip_header->ip_p == IPPROTO_TCP) {
-                tcp_header = (tcphdr *)(packet + ETHER_HDR_LEN + ip_header->ip_hl * 4);
-                printf("\n<PORT>\n");
-                printf("┌──────────────────┬────────┐\n");
-                printf("│ Protocol         │    TCP │\n");       
-                printf("├──────────────────┼────────┤\n");
-                printf("│ Sourse Port      │ %6d │\n", ntohs(tcp_header->th_sport));       
-                printf("├──────────────────┼────────┤\n");
-                printf("│ Destination Port │ %6d │\n", ntohs(tcp_header->th_dport));       
-                printf("└──────────────────┴────────┘\n");
-            }
+            TCP_or_UDP(ip_header, packet);
 
+        } else if(type == ETHERTYPE_IPV6) {
+            printf("┌──────────────────┬────────┐\n");
+            printf("│ Ethernet type    │   IPv6 │\n");       
+            printf("└──────────────────┴────────┘\n"); 
+            char ip_src[INET_ADDRSTRLEN];
+            char ip_des[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &(ip_header->ip_src), ip_src, INET_ADDRSTRLEN);
+            inet_ntop(AF_INET, &(ip_header->ip_dst), ip_des, INET_ADDRSTRLEN);
+
+            printf("\n<IP>\n");
+            printf("┌────────────────────────┬─────────────────┐\n");
+            printf("│ IP Sourse address      │ %15s │\n", ip_src);       
+            printf("├────────────────────────┼─────────────────┤\n");
+            printf("│ IP Destination address │ %15s │\n", ip_des);       
+            printf("└────────────────────────┴─────────────────┘\n"); 
+            TCP_or_UDP(ip_header, packet);
         } else if(type == ETHERTYPE_ARP) {
             printf("┌──────────────────┬────────┐\n");
             printf("│ Ethernet type    │    ARP │\n");       
@@ -173,10 +189,6 @@ int main(int argc, char **argv){
         } else if(type == ETHERTYPE_PUP) {
             printf("┌──────────────────┬────────┐\n");
             printf("│ Ethernet type    │    PUP │\n");       
-            printf("└──────────────────┴────────┘\n");  
-        } else if(type == ETHERTYPE_IPV6) {
-            printf("┌──────────────────┬────────┐\n");
-            printf("│ Ethernet type    │   IPv6 │\n");       
             printf("└──────────────────┴────────┘\n");  
         } else {
             printf("┌──────────────────┬────────────┐\n");
