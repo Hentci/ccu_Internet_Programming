@@ -1,1 +1,1 @@
-# make
+# Use <make> to compile the c program
