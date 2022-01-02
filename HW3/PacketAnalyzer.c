@@ -74,9 +74,31 @@ void TCP_or_UDP(ip *ip_header, u_char *packet){
     }
 }
 
-// void TCP_or_UDP_for_IPv6(ip6_hdr *ip_header, u_char *packet){
-    
-// }
+void TCP_or_UDP_for_IPv6(ip6_hdr *ip6_header, u_char *packet){
+    tcphdr *tcp_header;
+    udphdr *udp_header;
+    if(ip6_header->ip6_nxt == IPPROTO_UDP) {
+        udp_header = (udphdr *)(packet + ETHER_HDR_LEN + sizeof(struct ip6_hdr));
+        printf("\n<PORT>\n");
+        printf("┌──────────────────┬────────┐\n");
+        printf("│ Protocol         │    UDP │\n"); 
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Sourse Port      │ %6d │\n", ntohs(udp_header->uh_sport));       
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Destination Port │ %6d │\n", ntohs(udp_header->uh_dport));       
+        printf("└──────────────────┴────────┘\n");
+    } else if(ip6_header->ip6_nxt == IPPROTO_TCP) {
+        tcp_header = (tcphdr *)(packet + ETHER_HDR_LEN + sizeof(struct ip6_hdr));
+        printf("\n<PORT>\n");
+        printf("┌──────────────────┬────────┐\n");
+        printf("│ Protocol         │    TCP │\n");       
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Sourse Port      │ %6d │\n", ntohs(tcp_header->th_sport));       
+        printf("├──────────────────┼────────┤\n");
+        printf("│ Destination Port │ %6d │\n", ntohs(tcp_header->th_dport));       
+        printf("└──────────────────┴────────┘\n");
+    }
+}
 
 int main(int argc, char **argv){
     if(argc < 2){
@@ -189,7 +211,7 @@ int main(int argc, char **argv){
             printf("│ IP Destination address │ %15s               \n", ip_des);       
             printf("└────────────────────────┴─────────────────────────────────────────────┘\n"); 
 
-            // TCP_or_UDP_for_IPv6(ip6_header, packet); 
+            TCP_or_UDP_for_IPv6(ip6_header, packet); 
 
         /* Others */
         } else if(type == ETHERTYPE_ARP) {
