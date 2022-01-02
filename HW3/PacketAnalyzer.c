@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <time.h>
-#include <errno.h>
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -29,10 +28,12 @@ typedef struct ip6_hdr ip6_hdr;
 #define MaxMACLEN 20
 
 void separateLine(char *str) {
-    int lineLen = 180, Len = strlen(str), leftBound = (lineLen - Len) / 2, rightBound = lineLen - Len - leftBound;
-    for(int i = 0;i < leftBound;i++) printf("=");
-    printf(" [%s] ", str);
-    for(int i = 0;i < rightBound;i++) printf("=");
+    printf("\n");
+    int lineLen = 56, Len = strlen(str), leftBound = (lineLen - Len) / 2, rightBound = lineLen - Len - leftBound;
+    for(int i = 0;i < leftBound;i++) printf("━");
+    printf("\n ↆ %s ↆ \n", str);
+    for(int i = 0;i < rightBound;i++) printf("━");
+    printf("\n");
     printf("\n");
 }
 
@@ -53,7 +54,6 @@ void TCP_or_UDP(ip *ip_header, u_char *packet){
     udphdr *udp_header;
     if(ip_header->ip_p == IPPROTO_UDP) {
         udp_header = (udphdr *)(packet + ETHER_HDR_LEN + ip_header->ip_hl * 4);
-        printf("\n<PORT>\n");
         printf("┌──────────────────┬────────┐\n");
         printf("│ Protocol         │    UDP │\n"); 
         printf("├──────────────────┼────────┤\n");
@@ -63,7 +63,6 @@ void TCP_or_UDP(ip *ip_header, u_char *packet){
         printf("└──────────────────┴────────┘\n");
     } else if(ip_header->ip_p == IPPROTO_TCP) {
         tcp_header = (tcphdr *)(packet + ETHER_HDR_LEN + ip_header->ip_hl * 4);
-        printf("\n<PORT>\n");
         printf("┌──────────────────┬────────┐\n");
         printf("│ Protocol         │    TCP │\n");       
         printf("├──────────────────┼────────┤\n");
@@ -79,7 +78,6 @@ void TCP_or_UDP_for_IPv6(ip6_hdr *ip6_header, u_char *packet){
     udphdr *udp_header;
     if(ip6_header->ip6_nxt == IPPROTO_UDP) {
         udp_header = (udphdr *)(packet + ETHER_HDR_LEN + sizeof(struct ip6_hdr));
-        printf("\n<PORT>\n");
         printf("┌──────────────────┬────────┐\n");
         printf("│ Protocol         │    UDP │\n"); 
         printf("├──────────────────┼────────┤\n");
@@ -89,7 +87,6 @@ void TCP_or_UDP_for_IPv6(ip6_hdr *ip6_header, u_char *packet){
         printf("└──────────────────┴────────┘\n");
     } else if(ip6_header->ip6_nxt == IPPROTO_TCP) {
         tcp_header = (tcphdr *)(packet + ETHER_HDR_LEN + sizeof(struct ip6_hdr));
-        printf("\n<PORT>\n");
         printf("┌──────────────────┬────────┐\n");
         printf("│ Protocol         │    TCP │\n");       
         printf("├──────────────────┼────────┤\n");
@@ -113,7 +110,7 @@ int main(int argc, char **argv){
 
     pcap_t *handler = pcap_open_offline(filename, errbuff);
     if(strlen(errbuff)) {
-        printf("cannot open %s\n%s\n", filename, errbuff);
+        printf("can't find %s\n%s\n", filename, errbuff);
         exit(1);
     }
 
@@ -129,7 +126,8 @@ int main(int argc, char **argv){
         else if(res == -2) {
             char line[100];
             sprintf(line, "It is the last packet of %s", filename);
-            separateLine(line);
+            printf("\n ▶ %s ◀ \n\n", line);
+            // separateLine(line);
             break;
         }
         else if(res == -1) {
@@ -152,7 +150,6 @@ int main(int argc, char **argv){
         sprintf(line, "PacketID: %d", ++packetID);
         separateLine(line);
 
-        printf("\n<Information>\n");
         printf("┌───────────────────┬─────────────────────────┐\n");
         printf("│ PacketID          │                    %4d │\n", packetID);       
         printf("├───────────────────┼─────────────────────────┤\n");
@@ -163,8 +160,6 @@ int main(int argc, char **argv){
         printf("│ Capture Length    │                   %5d │\n", packet_header->caplen);       
         printf("└───────────────────┴─────────────────────────┘\n");
 
-
-        printf("\n<MAC>\n");
         printf("┌─────────────────────────┬───────────────────┐\n");
         printf("│ MAC Sourse address      │ %15s │\n", MAC_src);       
         printf("├─────────────────────────┼───────────────────┤\n");
@@ -173,7 +168,6 @@ int main(int argc, char **argv){
 
         unsigned short type = ntohs(eth_header->ether_type); // net to host short int
         /* IPv4 */
-        printf("\n<Ethernet type>\n");
         if(type == ETHERTYPE_IP) {
             ip *ip_header = (ip *)(packet + ETHER_HDR_LEN);
             char ip_src[INET_ADDRSTRLEN];
@@ -185,7 +179,6 @@ int main(int argc, char **argv){
             printf("│ Ethernet type    │   IPv4 │\n");       
             printf("└──────────────────┴────────┘\n");
 
-            printf("\n<IP>\n");
             printf("┌────────────────────────┬─────────────────┐\n");
             printf("│ IP Sourse address      │ %15s │\n", ip_src);       
             printf("├────────────────────────┼─────────────────┤\n");
@@ -204,11 +197,10 @@ int main(int argc, char **argv){
             inet_ntop(AF_INET6, &(ip6_header->ip6_src), ip_src, INET6_ADDRSTRLEN);
             inet_ntop(AF_INET6, &(ip6_header->ip6_dst), ip_des, INET6_ADDRSTRLEN);
 
-            printf("\n<IP>\n");
             printf("┌────────────────────────┬─────────────────────────────────────────────┐\n");
-            printf("│ IP Sourse address      │ %15s               \n", ip_src);       
+            printf("│ IP Sourse address      │ %43s |\n", ip_src);                         
             printf("├────────────────────────┼─────────────────────────────────────────────┤\n");
-            printf("│ IP Destination address │ %15s               \n", ip_des);       
+            printf("│ IP Destination address │ %43s |\n", ip_des);       
             printf("└────────────────────────┴─────────────────────────────────────────────┘\n"); 
 
             TCP_or_UDP_for_IPv6(ip6_header, packet); 
